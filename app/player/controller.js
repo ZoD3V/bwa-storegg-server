@@ -27,10 +27,12 @@ module.exports = {
         .populate("category")
         .populate("nominals")
         .populate("user", "_id phoneNumber name");
-      if (!voucher) {
-        res.status(404).json({ msg: "voucher tidak di temukan" });
+      const payment = await Payment.find().populate("banks");
+      if (!voucher || !voucher) {
+        res.status(404).json({ msg: "data tidak di temukan" });
       }
-      res.status(200).json({ data: voucher });
+      // const result = { ...voucher, ...payment };
+      res.status(200).json({ data: voucher, payment: payment });
     } catch (error) {
       res
         .status(500)
