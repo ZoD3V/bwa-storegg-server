@@ -211,78 +211,81 @@ module.exports = {
       res.status(500).json({ msg: "Terjadi kesalahan" });
     }
   },
-  editProfile: async (req, res) => {
+  editProfile: async (req, res, next) => {
     try {
-      const { name = "", phoneNumber = "" } = req.body;
-      const payload = {};
-      if (name.length) payload.name = name;
-      if (phoneNumber.length) payload.phoneNumber = phoneNumber;
+      const { name = "", phoneNumber = "" } = req.body
+
+      const payload = {}
+
+      if (name.length) payload.name = name
+      if (phoneNumber.length) payload.phoneNumber = phoneNumber
 
       if (req.file) {
+
         let tmp_path = req.file.path;
-        let originaExt =
-          req.file.originalname.split(".")[
-            req.file.originalname.split(".").length - 1
-          ];
-        let filename = req.file.filename + "." + originaExt;
-        let target_path = path.resolve(
-          config.rootPath,
-          `public/uploads/${filename}`
-        );
-        const src = fs.createReadStream(tmp_path);
-        const dest = fs.createWriteStream(target_path);
+        let originaExt = req.file.originalname.split('.')[req.file.originalname.split('.').length - 1];
+        let filename = req.file.filename + '.' + originaExt;
+        let target_path = path.resolve(config.rootPath, `public/uploads/${filename}`)
 
-        src.pipe(dest);
-        src.on("end", async () => {
-          let player = Player.findOne({ _id: req.player._id });
+        const src = fs.createReadStream(tmp_path)
+        const dest = fs.createWriteStream(target_path)
 
-          const currentImage = `${config.rootPath}/public/uploads/${player.avatar}`;
+        src.pipe(dest)
+
+        src.on('end', async () => {
+          let player = await Player.findOne({ _id: req.player._id })
+
+          let currentImage = `${config.rootPath}/public/uploads/${player.avatar}`;
           if (fs.existsSync(currentImage)) {
-            fs.unlinkSync(currentImage);
+            fs.unlinkSync(currentImage)
           }
 
-          player = await player.findOneAndUpdate(
-            { _id: req.player._id },
-            {
-              ...payload,
-              avatar: filename,
-            },
-            { new: true, runValidators: true }
-          );
-          console.log(player);
-          res.status(200).json({
+          player = await Player.findOneAndUpdate({
+            _id: req.player._id
+          }, {
+            ...payload,
+            avatar: filename
+          }, { new: true, runValidators: true })
+
+          console.log(player)
+
+          res.status(201).json({
             data: {
-              id: player._id,
+              id: player.id,
               name: player.name,
               phoneNumber: player.phoneNumber,
               avatar: player.avatar,
-            },
-          });
-        });
-        src.on("err", async (next) => {
-          next(err);
-        });
-      } else {
-        const player = await Player.findOneAndUpdate(
-          {
-            _id: req.player._id,
-          },
-          payload,
-          { new: true, runValidators: true }
-        );
+            }
+          })
+        })
 
-        res.status(200).json({
+        src.on('err', async () => {
+          next(err)
+        })
+
+      } else {
+        const player = await Player.findOneAndUpdate({
+          _id: req.player._id
+        }, payload, { new: true, runValidators: true })
+
+        res.status(201).json({
           data: {
-            id: player._id,
+            id: player.id,
             name: player.name,
             phoneNumber: player.phoneNumber,
             avatar: player.avatar,
-          },
-        });
+          }
+        })
       }
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ msg: "Terjadi kesalahan" });
+
+    } catch (err) {
+      if (err && err.name === "ValidationError") {
+        res.status(422).json({
+          error: 1,
+          message: err.message,
+          fields: err.errors
+        })
+      }
     }
-  },
+  }
 };
