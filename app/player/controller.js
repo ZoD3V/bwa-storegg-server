@@ -233,7 +233,7 @@ module.exports = {
         src.pipe(dest)
 
         src.on('end', async () => {
-          let player = await Player.findOne({ _id: req.player._id })
+          let player = await Player.findOne({ _id: req.params.id })
 
           let currentImage = `${config.rootPath}/public/uploads/${player.avatar}`;
           if (fs.existsSync(currentImage)) {
@@ -241,7 +241,7 @@ module.exports = {
           }
 
           player = await Player.findOneAndUpdate({
-            _id: req.player._id
+            _id: req.params.id
           }, {
             ...payload,
             avatar: filename
@@ -265,7 +265,7 @@ module.exports = {
 
       } else {
         const player = await Player.findOneAndUpdate({
-          _id: req.player._id
+          _id: req.params.id
         }, payload, { new: true, runValidators: true })
 
         res.status(201).json({
